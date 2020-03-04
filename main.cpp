@@ -74,37 +74,39 @@ struct Filter
         void spawnKnob(int numberOfKnobs, float knobLocation);
     };
 
-    void updateKnobPosition(FilterKnob knobOne, double nextKnobPosition);
-    double transitionToNextFrequency(Filter, double, double);
+    FilterKnob myKnob;
+
+    void updateKnobPosition(double nextKnobPosition);
+    double transitionToNextFrequency(double, double);
 };
 
-double Filter::transitionToNextFrequency(Filter thisFilter, double targetFrequency, double incrementAmount)
+double Filter::transitionToNextFrequency(double targetFrequency, double incrementAmount)
 {
-    std::cout << "\nThe starting frequency before transitioning is: " << thisFilter.frequency << "." << std::endl;
+    std::cout << "\nThe starting frequency before transitioning is: " << frequency << "." << std::endl;
 
-    while(targetFrequency <= thisFilter.frequency || thisFilter.frequency <= targetFrequency)
+    while(targetFrequency <= frequency || frequency <= targetFrequency)
     {
-        std::cout << "Transitioning... frequency is: " << thisFilter.frequency << std::endl;
+        std::cout << "Transitioning... frequency is: " << frequency << std::endl;
 
-        if(thisFilter.frequency < targetFrequency && targetFrequency - thisFilter.frequency > incrementAmount)
+        if(frequency < targetFrequency && targetFrequency - frequency > incrementAmount)
         {
-            thisFilter.frequency += incrementAmount;
+            frequency += incrementAmount;
         }
-        else if(thisFilter.frequency > targetFrequency && targetFrequency - thisFilter.frequency < incrementAmount)
+        else if(frequency > targetFrequency && targetFrequency - frequency < incrementAmount)
         {
-            thisFilter.frequency -= incrementAmount;
+            frequency -= incrementAmount;
         }
         else
         {
-            double remainder = targetFrequency - thisFilter.frequency;
-            thisFilter.frequency += remainder; // making sure we hit that final increment without exceeding target
+            double remainder = targetFrequency - frequency;
+            frequency += remainder; // making sure we hit that final increment without exceeding target
             
-            std::cout << "Frequency transition completed. Current frequency is: " << thisFilter.frequency << ".\n" << std::endl;
-            return thisFilter.frequency;
+            std::cout << "Frequency transition completed. Current frequency is: " << frequency << ".\n" << std::endl;
+            return frequency;
         }  
     }
     
-    return thisFilter.frequency;
+    return frequency;
 }
 
 void Filter::FilterKnob::spawnKnob(int numberOfKnobs, float knobLocation)
@@ -115,10 +117,9 @@ void Filter::FilterKnob::spawnKnob(int numberOfKnobs, float knobLocation)
     std::cout << "You are trying to spawn too many knobs at once!\n\n";
 }
 
-void Filter::updateKnobPosition(FilterKnob knobToUpdate, double nextKnobPosition)
+void Filter::updateKnobPosition(double nextKnobPosition)
 {
-    int knobID = knobToUpdate.knobID;
-    std::cout << "The knob to update is: " << knobID << ". The next knob position is: " << nextKnobPosition << ".\n" << std::endl;
+    std::cout << "The knob to update is: " << myKnob.knobID << ". The next knob position is: " << nextKnobPosition << ".\n" << std::endl;
     std::cout << "Your filter frequency is:" << frequency << std::endl;
 }
 /*
@@ -164,20 +165,20 @@ struct WavetableOscillator
         return{};
     }
 
-    float fadeOutVolume(WavetableOscillator osc, float incrementAmount)
+    float fadeOutVolume(float incrementAmount)
     {
-        for(float i = osc.volumeLevel; i >= 0; i -= incrementAmount)
+        for(float i = volumeLevel; i >= 0; i -= incrementAmount)
         {
-            osc.volumeLevel -= incrementAmount;
-            std::cout << "Current oscillator volume is: " << osc.volumeLevel << "." << std::endl;
-            if(osc.volumeLevel <= 0)
+            volumeLevel -= incrementAmount;
+            std::cout << "Current oscillator volume is: " << volumeLevel << "." << std::endl;
+            if(volumeLevel <= 0)
             {
                 std::cout << "Finished fading out!\n" << std::endl;
-                return osc.volumeLevel;
+                return volumeLevel;
             }
         }
         
-        return osc.volumeLevel;
+        return volumeLevel;
     }
 };
 /*
@@ -203,14 +204,14 @@ struct Reverb
 
     int setNextReverbSettings(Reverb newVerbSettings);
 
-    double setNextDryWet(Reverb targetVerb, double nextDryWetValue)
+    double setNextDryWet(double nextDryWetValue)
     {
         double epsilon = 0.0001;
 
         std::cout << "\nAdjusting reverb dryWet!" << std::endl;
         double incrementPolarity;
 
-        if(targetVerb.dryWet < nextDryWetValue) incrementPolarity = 0.1;
+        if(dryWet < nextDryWetValue) incrementPolarity = 0.1;
         else incrementPolarity = -0.1;
 
         if(nextDryWetValue > 1) 
@@ -219,7 +220,7 @@ struct Reverb
             return dryWet;
         }
 
-        for(double instancedDryWet = targetVerb.dryWet; std::abs(instancedDryWet - nextDryWetValue) > epsilon; instancedDryWet += incrementPolarity)
+        for(double instancedDryWet = dryWet; std::abs(instancedDryWet - nextDryWetValue) > epsilon; instancedDryWet += incrementPolarity)
         {
             std::cout << "Current dryWet is: " << instancedDryWet << "." << std::endl;
 
@@ -235,15 +236,14 @@ struct Reverb
 
 int Reverb::setNextReverbSettings(Reverb newVerbSettings)
 {
-    Reverb oldVerbSettings;
-    if(newVerbSettings.decayTime == oldVerbSettings.decayTime)
+    if(newVerbSettings.decayTime == decayTime)
     {
         decayTime = 0;
         std::cout << "Setting reverb decay time to: " << decayTime << ".\n" << std::endl;
     }
     else
     {
-        newVerbSettings.decayTime = oldVerbSettings.decayTime;
+        decayTime = newVerbSettings.decayTime;
         std::cout << "Setting reverb decay time to old verb settings: (" << newVerbSettings.decayTime << ").\n\n" << std::endl;
     }
     return {};
@@ -258,7 +258,7 @@ struct Synthesizer
 
     ~Synthesizer()
     {
-        thisOscillator.fadeOutVolume(thisOscillator, 0.1f);
+        thisOscillator.fadeOutVolume(0.1f);
         std::cout << "Fading volume and destroying synthesizer" << std::endl;
     }
 };
@@ -272,9 +272,9 @@ struct EffectsRack
 
     ~EffectsRack()
     {
-        rackFilter.transitionToNextFrequency(rackFilter, 5000.0, 100);
+        rackFilter.transitionToNextFrequency(5000.0, 100);
 
-        rackReverb.setNextDryWet(rackReverb, 0.5);
+        rackReverb.setNextDryWet(0.5);
 
         std::cout << "Destroying effects rack!\n" << std::endl;
     }
