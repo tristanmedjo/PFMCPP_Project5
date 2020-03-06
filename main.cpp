@@ -108,25 +108,25 @@ double Filter::transitionToNextFrequency(double targetFrequency, double incremen
 {
     std::cout << "\nThe starting frequency before transitioning is: " << frequency << "." << std::endl;
 
-    while(targetFrequency <= frequency || frequency <= targetFrequency)
+    while(targetFrequency <= this->frequency || this->frequency <= targetFrequency)
     {
-        std::cout << "Transitioning... frequency is: " << frequency << std::endl;
+        std::cout << "Transitioning... frequency is: " << this->frequency << std::endl;
 
-        if(frequency < targetFrequency && targetFrequency - frequency > incrementAmount)
+        if(this->frequency < targetFrequency && targetFrequency - this->frequency > incrementAmount)
         {
-            frequency += incrementAmount;
+            this->frequency += incrementAmount;
         }
-        else if(frequency > targetFrequency && targetFrequency - frequency < incrementAmount)
+        else if(this->frequency > targetFrequency && targetFrequency - this->frequency < incrementAmount)
         {
-            frequency -= incrementAmount;
+            this->frequency -= incrementAmount;
         }
         else
         {
-            double remainder = targetFrequency - frequency;
-            frequency += remainder; // making sure we hit that final increment without exceeding target
+            double remainder = targetFrequency - this->frequency;
+            this->frequency += remainder; // making sure we hit that final increment without exceeding target
             
             std::cout << "Frequency transition completed. Current frequency is: " << frequency << ".\n" << std::endl;
-            return frequency;
+            return this->frequency;
         }  
     }
     
@@ -191,18 +191,18 @@ struct WavetableOscillator
 
     float fadeOutVolume(float incrementAmount)
     {
-        for(float i = volumeLevel; i >= 0; i -= incrementAmount)
+        for(float i = this->volumeLevel; i >= 0; i -= incrementAmount)
         {
-            volumeLevel -= incrementAmount;
-            std::cout << "Current oscillator volume is: " << volumeLevel << "." << std::endl;
+            this->volumeLevel -= incrementAmount;
+            std::cout << "Current oscillator volume is: " << this->volumeLevel << "." << std::endl;
             if(volumeLevel <= 0)
             {
                 std::cout << "Finished fading out!\n" << std::endl;
-                return volumeLevel;
+                return this->volumeLevel;
             }
         }
         
-        return volumeLevel;
+        return this->volumeLevel;
     }
 };
 /*
@@ -226,8 +226,6 @@ struct Reverb
         std::cout << "Destroying Reverb object!\n" << std::endl;
     }
 
-    int setNextReverbSettings(Reverb newVerbSettings);
-
     double setNextDryWet(double nextDryWetValue)
     {
         double epsilon = 0.0001;
@@ -235,43 +233,29 @@ struct Reverb
         std::cout << "\nAdjusting reverb dryWet!" << std::endl;
         double incrementPolarity;
 
-        if(dryWet < nextDryWetValue) incrementPolarity = 0.1;
+        if(this->dryWet < nextDryWetValue) incrementPolarity = 0.1;
         else incrementPolarity = -0.1;
 
         if(nextDryWetValue > 1) 
         {
             std::cout << "dryWet cannot be higher than 1.0!" << std::endl;
-            return dryWet;
+            return this->dryWet;
         }
 
-        for(double instancedDryWet = dryWet; std::abs(instancedDryWet - nextDryWetValue) > epsilon; instancedDryWet += incrementPolarity)
+        for(double instancedDryWet = this->dryWet; std::abs(instancedDryWet - nextDryWetValue) > epsilon; instancedDryWet += incrementPolarity)
         {
             std::cout << "Current dryWet is: " << instancedDryWet << "." << std::endl;
 
             if(instancedDryWet <= nextDryWetValue)
             {
                 std::cout << "Finished! New dryWet is: " << instancedDryWet << ".\n" << std::endl;
-                return dryWet;
+                return this->dryWet;
             }
         }
         return dryWet;
     }
 };
 
-int Reverb::setNextReverbSettings(Reverb newVerbSettings)
-{
-    if(newVerbSettings.decayTime == decayTime)
-    {
-        decayTime = 0;
-        std::cout << "Setting reverb decay time to: " << decayTime << ".\n" << std::endl;
-    }
-    else
-    {
-        decayTime = newVerbSettings.decayTime;
-        std::cout << "Setting reverb decay time to old verb settings: (" << newVerbSettings.decayTime << ").\n\n" << std::endl;
-    }
-    return {};
-}
 
 /*
  new UDT 4:
@@ -285,6 +269,12 @@ struct Synthesizer
         thisOscillator.fadeOutVolume(0.1f);
         std::cout << "Fading volume and destroying synthesizer" << std::endl;
     }
+
+    void printVolumeLevel()
+    {
+        std::cout << "The synthesizer volume level is: "<<  this->thisOscillator.volumeLevel << std::endl;
+    }
+
 };
 /*
  new UDT 5:
@@ -302,6 +292,16 @@ struct EffectsRack
 
         std::cout << "Destroying effects rack!\n" << std::endl;
     }
+
+    void printFilterFrequencyLevel()
+    {
+        std::cout << "The effects rack filter frequency is: " << this->rackFilter.frequency << std::endl;
+    }
+
+    void printReverbDecayTime()
+    {
+    std::cout << "The effects rack decay time is: " << this->rackReverb.decayTime << std::endl;
+    }
 };
 
 int main()
@@ -310,5 +310,19 @@ int main()
     Synthesizer mySynth;
     EffectsRack myRack;
 
+    std::cout << "The synthesizer volume level is: " <<  mySynth.thisOscillator.volumeLevel << std::endl;
+    mySynth.printVolumeLevel();
+    
+    std::cout << "The effects rack filter frequency is: " << myRack.rackFilter.frequency << std::endl;
+    myRack.printFilterFrequencyLevel();
+
+    std::cout << "The effects rack decay time is: " << myRack.rackReverb.decayTime << std::endl;
+    myRack.printReverbDecayTime();
+
     std::cout << "good to go!" << std::endl;
 }
+
+
+//        int maxNumberOfWaveforms;
+///        bool interpolationOn;
+//        int currentWavetable;
